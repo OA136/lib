@@ -14,6 +14,7 @@ or other application using the libvirt API.
   <os>
     <type arch='x86_64' machine='pc'>hvm</type>
     <boot dev='hd'/>
+	<boot dev='cdrom'/>
   </os>
   <features>
     <acpi/>
