@@ -71,18 +71,18 @@ git clone https://github.com/volatilityfoundation/volatility.git
 						linux_mm = 0x3a0;
 						linux_pid = 0x448;
 						linux_pgd = 0x40;
-				sysmap需要：ls /boot 此处为：/boot/System.map-4.2.0-87-generic
+				sysmap需要：ls /boot 此处为：/boot/System.map-4.4.0-116-generic
 			3、最终宿主机得到的libvmi.conf文件为：
 					master1 {
 						ostype = "Linux";
-						sysmap = "/boot/System.map-4.2.0-87-generic";
+						sysmap = "/boot/System.map-4.4.0-116-generic";
 						linux_name = 0x600;
 						linux_tasks = 0x350;
 						linux_mm = 0x3a0;
 						linux_pid = 0x448;
 						linux_pgd = 0x40;
 					}
-			4、把虚拟机下的/boot/System.map-4.2.0-87-generic复制到宿主机的/boot目录下（如宿主机的目录下有此内核版本的，则可忽略此步）
+			4、把虚拟机下的/boot/System.map-4.4.0-116-generic复制到宿主机的/boot目录下（如宿主机的目录下有此内核版本的，则可忽略此步）
 			
 			5、测试：libvmi/examples# ./vmi-process-list master1
 		#测试windows
