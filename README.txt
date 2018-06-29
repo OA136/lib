@@ -1,4 +1,6 @@
-===========Ubuntu-16.04.4 内核版本：4.4.0-116-generic==========
+===========宿主机：Ubuntu-16.04.4-server-amd64 内核版本：4.4.0-116-generic==========
+===========虚拟机：Ubuntu-16.04.4-server-amd64 内核版本：4.4.0-116-generic==========
+===========Win7：cn_windows_7_enterprise_with_sp1_x64_dvd_620654.iso ===============
 ##学长github
 https://github.com/lixingchen12138/libvmi-volatility-master
 https://github.com/lixingchen12138/monitor_server
@@ -22,8 +24,15 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	tar zxvf libvirt-1.3.1.tar.gz && cd libvirt-1.3.1 && ./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc
 	make
 	make install
-#2、安装qemu-kvm（默认安装的是2.5.0）
-	apt-get install qemu-kvm
+#1、安装qemu-kvm-1.2.0  参考链接：https://blog.csdn.net/u010466329/article/details/72465752
+	apt-get install cmake libcurl4-openssl-dev autoconf libtool bison flex libpixman-1-dev zlib1g-dev libglib2.0-dev libsnappy-dev libgtk-3-dev libsdl2-dev libjpeg-turbo8-dev libspice-server-dev 
+	wget https://sourceforge.net/projects/kvm/files/latest/download/qemu-kvm.1.2.0.tar.gz
+	tar zxvf qemu-kvm.1.2.0.tar.gz
+	cd qemu-kvm-1.2.0
+	patch -p1 < ../libvmi/tools/qemu-kvm-patch/kvm-physmem-access_1.2.0.patch
+	./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc --enable-debug --enable-vnc --enable-vnc-jpeg --enable-vnc-png --enable-kvm --enable-spice --enable-curl
+	make
+	make install
 #3、安装libvmi https://github.com/libvmi/libvmi
 ##安装pdbparse
 	git clone https://github.com/moyix/pdbparse.git
@@ -56,12 +65,9 @@ git clone https://github.com/volatilityfoundation/volatility.git
 			linux_pgd = 0x40;
 		}
 
-	2、将libvmi/tools/linux-offset-finder文件夹复制到虚拟机master：scp -r ./tools/linux-offset-finder master1@192.168.75.161:/home/master1
-		进入master1，root 用户下编译，编译时可能需要安装4.9及其以上的gcc：apt-get install gcc
-			make
-			insmod findoffsets.ko
-			rmmod findoffsets.ko
-			dmesg
+	2、将libvmi/tools/linux-offset-finder文件夹复制到虚拟机master：（如果在宿主机下远程执行命令不成功，则进入master，root 用户下编译，编译时可能需要安装4.9及其以上的gcc：）
+		scp -r ./tools/linux-offset-finder root@192.168.122.56:/root
+		ssh root@192.168.122.56	"apt-get update && apt-get install gcc make && cd linux-offset-finder && make && insmod findoffsets.ko && rmmod findoffsets.ko && dmesg"
 		可以看到相关的信息,
 			ostype = "Linux";
 			sysmap = "[insert path here]";
@@ -72,7 +78,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 			linux_pgd = 0x40;
 		sysmap需要：ls /boot 此处为：/boot/System.map-4.4.0-116-generic
 	3、最终宿主机得到的libvmi.conf文件为：
-			master1 {
+			master {
 				ostype = "Linux";
 				sysmap = "/boot/System.map-4.4.0-116-generic";
 				linux_name = 0x600;
@@ -83,7 +89,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 			}
 	4、把虚拟机下的/boot/System.map-4.4.0-116-generic复制到宿主机的/boot目录下（如宿主机的目录下有此内核版本的，则可忽略此步）
 
-	5、测试：libvmi/examples# ./vmi-process-list master1
+	5、测试：libvmi/examples# ./vmi-process-list master
 		#测试windows
 		#方法1、使用pdb
 			#宿主机安装依赖：
@@ -116,7 +122,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 				##将得到的如下结果加入到/etc/libvmi.conf文件中，接着在exampls文件夹中运行./vmi-vmi-process-list win1
 					win {
 					ostype = "Windows";
-					rekall_profile = "/home/sq/package/libvmi/tools/windows-offset-finder/win-profile.json";
+					rekall_profile = "/root/sq/libvmi/tools/windows-offset-finder/win-profile.json";
 				}
 				#rekall -f vmi://kvm/win pslist
 #4、安装volatility
@@ -206,6 +212,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 		qemu-img create -f qcow2 /var/lib/libvirt/images/master.img 8G
 		virsh define /etc/libvirt/qemu/master.xml
 		virsh start master
+		##注意，安装过程中需要选择:"Guided - use entire disk"
 		
 		qemu-img create -f qcow2 /var/lib/libvirt/images/win.img 20G
 		virsh define /etc/libvirt/qemu/win.xml
@@ -324,6 +331,23 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	vim /etc/ld.so.conf.d/libc.conf
 	添加在第二行
 	/usr/lib
+3、qemu-kvm-1.2.0/qemu-timer.c:534: undefined reference to `timer_gettime'
+	解决1：sudo vim configure	
+	---------------------------configure start------------------------------
+	# Do we need librt
+	cat > $TMPC <<EOF
+	#include <signal.h>
+	#include <time.h>
+	int main(void) { timer_create(CLOCK_REALTIME, NULL, NULL); return clock_gettime(CLOCK_REALTIME, NULL); }
+	EOF
+
+	if compile_prog "" "" ; then
+	  :
+	elif compile_prog "" "-lrt $pthread_lib" ; then
+	  LIBS="-lrt $LIBS"
+	  libs_qga="-lrt $libs_qga"
+	fi
+	---------------------------configure end--------------------------------
 ----------------------------------------
 
 
