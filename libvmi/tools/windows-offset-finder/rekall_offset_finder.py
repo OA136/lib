@@ -110,11 +110,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     url = sys.argv[1]
-    print(url)
     pattern = 'vmi://((?P<hypervisor>xen|kvm))?/(?P<domain>.*)'
     m = re.match(pattern, url)
     domain = m.group('domain')
-    print(domain)
     config = extract_offsets(domain, url)
     formatted_config = format_config(domain, config)
     print(formatted_config)

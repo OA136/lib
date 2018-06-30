@@ -54,17 +54,8 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	import libvmi
 ###测试libvmi是否安装成功
 ###测试linux虚拟机
-	1、在宿主机里面新建libvmi的配置文件，/etc/libvmi.conf,内容格式为：
-		master {
-			ostype = "Linux";
-			sysmap = "[insert path here]";
-			linux_name = 0x600;
-			linux_tasks = 0x350;
-			linux_mm = 0x3a0;
-			linux_pid = 0x448;
-			linux_pgd = 0x40;
-		}
-
+	1、在宿主机里面新建libvmi的配置文件，/etc/libvmi.conf
+	
 	2、将libvmi/tools/linux-offset-finder文件夹复制到虚拟机master：（如果在宿主机下远程执行命令不成功，则进入master，root 用户下编译，编译时可能需要安装4.9及其以上的gcc：）
 		scp -r ./tools/linux-offset-finder root@192.168.122.56:/root
 		ssh root@192.168.122.56 "apt-get update && apt-get install gcc make && cd linux-offset-finder && make && insmod findoffsets.ko && rmmod findoffsets.ko && dmesg"
@@ -77,7 +68,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 			linux_pid = 0x448;
 			linux_pgd = 0x40;
 		sysmap需要：ls /boot 此处为：/boot/System.map-4.4.0-116-generic
-	3、最终宿主机得到的libvmi.conf文件为：
+	3、最终宿主机的libvmi.conf内容为：
 			master {
 				ostype = "Linux";
 				sysmap = "/boot/System.map-4.4.0-116-generic";
@@ -118,12 +109,12 @@ git clone https://github.com/volatilityfoundation/volatility.git
 				(venv) python setup.py install
 				(venv) cd ../libvmi/tools/windows-offset-finder
 				(venv) python rekall_offset_finder.py vmi:///win
-				##将得到的如下结果加入到/etc/libvmi.conf文件中，接着在exampls文件夹中运行./vmi-vmi-process-list win
-					win {
+				##将得到的如下结果加入到/etc/libvmi.conf文件中，接着在/root/sq/libvmi/exampls文件夹中运行./vmi-vmi-process-list win
+				win {
 					ostype = "Windows";
 					rekall_profile = "/root/sq/libvmi/tools/windows-offset-finder/win-profile.json";
 				}
-				#rekall -f vmi://kvm/win pslist
+				#rekall -f vmi:///win pslist
 #4、安装volatility
 ##安装依赖
 	pip install PyCrypto Distorm3 ujson openpyxl IPython && easy_install --upgrade pytz
@@ -159,7 +150,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 			libvmi/examples# mv ./win.dd ../../volatility/
 			查看建议的profile信息：
 			vol.py -f win.dd imageinfo
-		python vol.py --profile=Win7SP1x64_23418 -l vmi://win pslist
+		python vol.py --profile=Win7SP1x64 -l vmi://win pslist
 	
 ++++++++++++++++++++++++++++++++++++获取windows虚拟机内存使用需要安装virtio-win驱动++++++++++++++++++++++++++++++++++++++++++++++++++++++
 1、下载包含驱动的ISO
@@ -169,7 +160,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	#1、挂载（如不能直接挂载见步骤##3）：
 		virsh attach-disk win /root/virtio-win-0.1.141.iso hdc --type cdrom --mode readonly --live
 	#2、弹出（本质是更新为一个空的）
-		virsh attach-disk win1 "" hdc --type cdrom --mode readonly --live
+		virsh attach-disk win "" hdc --type cdrom --mode readonly --live
 	##3、不能直接挂载，则需要添加一个设备：
 		参考链接：https://docs-old.fedoraproject.org/en-US/Fedora/18/html/Virtualization_Administration_Guide/sect-Attaching_and_updating_a_device_with_virsh.html
 		vim /etc/libvirt/qemu/win-device.xml
