@@ -27,10 +27,11 @@ git clone https://github.com/volatilityfoundation/volatility.git
 #1、安装qemu-1.6.0  参考链接：https://blog.csdn.net/u010466329/article/details/72465752
 	apt-get install cmake libcurl4-openssl-dev autoconf libtool bison flex libpixman-1-dev zlib1g-dev libglib2.0-dev libsnappy-dev libgtk-3-dev libsdl2-dev libjpeg-turbo8-dev libspice-server-dev 
 	wget https://download.qemu.org/qemu-1.6.0.tar.xz
-	tar xvJf qemu-kvm-1.6.0.tar.xz && cd qemu-kvm-1.6.0 && patch -p1 < ../libvmi/tools/qemu-kvm-patch/kvm-physmem-access-physmem-snapshot_1.6.0.patch
+	tar xvJf qemu-1.6.0.tar.xz && cd qemu-1.6.0 && patch -p1 < ../libvmi/tools/qemu-kvm-patch/kvm-physmem-access-physmem-snapshot_1.6.0.patch
 	./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc --enable-debug --enable-vnc --enable-vnc-jpeg --enable-vnc-png --enable-kvm --enable-spice --enable-curl
 	make
 	make install
+   #（make遇到错误，则:export ARFLAGS="rv"）
 #3、安装libvmi https://github.com/libvmi/libvmi
 ##安装pdbparse
 	git clone https://github.com/moyix/pdbparse.git
@@ -43,6 +44,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	cd libvmi && ./autogen.sh && ./configure --enable-shm-snapshot -build=x86_64-linux-gnu --disable-xen
 	make && make install && ldconfig && cd ..
 ##安装libvmi-python：https://github.com/libvmi/python
+	apt install zip python-pip
 	pip install --upgrade setuptools pip wheel
 	pip install enum
 	cd python-libvmi && cp ../libvmi/libvmi/*.h /usr/local/include/libvmi && python setup.py build && python setup.py install && cd ..
@@ -105,8 +107,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 				#venv是在/录下创建的目录，相当于虚拟环境，可以使用其他版本的python；
 				使用：source /venv/bin/activate 激活；deactivate 退出
 				apt-get install python-virtualenv
-				virtualenv -p python3 /venv
-				source /venv/bin/activate
+				virtualenv -p python3 /venv && source /venv/bin/activate
 				(venv) pip install --upgrade setuptools pip wheel
 				(venv) pip install --editable rekall/rekall-lib
 				(venv) pip install --editable rekall/rekall-core
@@ -117,7 +118,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 				(venv) python setup.py install
 				(venv) cd ../libvmi/tools/windows-offset-finder
 				(venv) python rekall_offset_finder.py vmi:///win
-				##将得到的如下结果加入到/etc/libvmi.conf文件中，接着在exampls文件夹中运行./vmi-vmi-process-list win1
+				##将得到的如下结果加入到/etc/libvmi.conf文件中，接着在exampls文件夹中运行./vmi-vmi-process-list win
 					win {
 					ostype = "Windows";
 					rekall_profile = "/root/sq/libvmi/tools/windows-offset-finder/win-profile.json";
@@ -125,8 +126,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 				#rekall -f vmi://kvm/win pslist
 #4、安装volatility
 ##安装依赖
-	pip install PyCrypto Distorm3 ujson openpyxl IPython
-	easy_install --upgrade pytz
+	pip install PyCrypto Distorm3 ujson openpyxl IPython && easy_install --upgrade pytz
 
 	git clone https://github.com/FreddieWitherden/libforensic1394.git
 	cd libforensic1394 && mkdir build && cd build && cmake -G"Unix Makefiles" ../ && make && make install && cd ../../
