@@ -24,10 +24,10 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	tar zxvf libvirt-1.3.1.tar.gz && cd libvirt-1.3.1 && ./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc
 	make
 	make install
-#1、安装qemu-1.6.0  参考链接：https://blog.csdn.net/u010466329/article/details/72465752
+#1、安装qemu-1.5.1  参考链接：https://blog.csdn.net/u010466329/article/details/72465752
 	apt-get install cmake libcurl4-openssl-dev autoconf libtool bison flex libpixman-1-dev zlib1g-dev libglib2.0-dev libsnappy-dev libgtk-3-dev libsdl2-dev libjpeg-turbo8-dev libspice-server-dev 
-	wget https://download.qemu.org/qemu-1.6.0.tar.xz
-	tar xvJf qemu-1.6.0.tar.xz && cd qemu-1.6.0 && patch -p1 < ../libvmi/tools/qemu-kvm-patch/kvm-physmem-access-physmem-snapshot_1.6.0.patch
+	wget https://download.qemu.org/qemu-1.5.1.tar.xz
+	tar xvJf qemu-1.5.1.tar.xz && cd qemu-1.5.1 && patch -p1 < ../libvmi/tools/qemu-kvm-patch/kvm-physmem-access_1.5.1.patch
 	./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc --enable-debug --enable-vnc --enable-vnc-jpeg --enable-vnc-png --enable-kvm --enable-spice --enable-curl
 	make
 	make install
