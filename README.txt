@@ -67,7 +67,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 
 	2、将libvmi/tools/linux-offset-finder文件夹复制到虚拟机master：（如果在宿主机下远程执行命令不成功，则进入master，root 用户下编译，编译时可能需要安装4.9及其以上的gcc：）
 		scp -r ./tools/linux-offset-finder root@192.168.122.56:/root
-		ssh root@192.168.122.56	"apt-get update && apt-get install gcc make && cd linux-offset-finder && make && insmod findoffsets.ko && rmmod findoffsets.ko && dmesg"
+		ssh root@192.168.122.56 "apt-get update && apt-get install gcc make && cd linux-offset-finder && make && insmod findoffsets.ko && rmmod findoffsets.ko && dmesg"
 		可以看到相关的信息,
 			ostype = "Linux";
 			sysmap = "[insert path here]";
@@ -88,12 +88,12 @@ git clone https://github.com/volatilityfoundation/volatility.git
 				linux_pgd = 0x40;
 			}
 	4、把虚拟机下的/boot/System.map-4.4.0-116-generic复制到宿主机的/boot目录下（如宿主机的目录下有此内核版本的，则可忽略此步）
-
+		scp root@192.168.122.56:/boot/System.map-4.4.0-116-generic /boot
 	5、测试：libvmi/examples# ./vmi-process-list master
-		#测试windows
+		#测试windows（推荐方法2）
 		#方法1、使用pdb
 			#宿主机安装依赖：
-				apt-get install python-pefile mscompress cabextract 
+				apt-get install python-pefile mscompress cabextract
 				pip install construct==2.5.5-reupload pdbparse
 			#安装好windows虚拟机后（domain：win保存的文件名：win.dd）：
 				libvmi/examples# ./dump-memory win win.dd
@@ -101,7 +101,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 				cd libvmi/tools/windows-offset-finder
 				g++ -o getGUID getGUID.cpp
 				./getGUID win.dd |python ./downloadPDB.py |python ./dumpPDB.py -o debugSymbols.txt
-		#（推荐）方法2、使用rekall
+		#方法2、使用rekall
 			##安装rekall：git clone https://github.com/google/rekall.git
 			##安装说明在：https://github.com/libvmi/libvmi/tree/master/tools/windows-offset-finder
 				#venv是在/录下创建的目录，相当于虚拟环境，可以使用其他版本的python；
@@ -144,7 +144,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	cd volatility
 	##测试
 	##测试linux虚拟机：
-		#将文件夹复制到虚拟机master中，并在虚拟机中生成dwarf，并将其拷贝到宿主机中
+		#将volatility中的文件夹复制到虚拟机master中，并在虚拟机中生成dwarf，并将其拷贝到宿主机中
 			scp -r tools/linux/ root@192.168.122.56:/root
 			ssh root@192.168.122.56 "apt-get install dwarfdump && cd linux && make"
 			scp root@192.168.122.56:/root/linux/module.dwarf tools/linux/
@@ -155,15 +155,53 @@ git clone https://github.com/volatilityfoundation/volatility.git
 			python vol.py --info|grep Linux
 		##运行
 			python vol.py -l vmi://master --profile=Linuxmasterx64 linux_pslist
-	##测试windows虚拟机：https://github.com/volatilityfoundation/volatility/wiki/2.6-Win-Profiles
-		libvmi/examples# ./vmi-dump-memory win win.dd
-		libvmi/examples# mv ./win.dd ../../volatility/
-		查看建议的profile信息：
-		volatility# 	 vol.py -f win.dd imageinfo
+	##测试windows虚拟机：到https://github.com/volatilityfoundation/volatility/wiki/2.6-Win-Profiles
+	上查看对应windows版本的profile名称，可忽略以下三步：
+			libvmi/examples# ./vmi-dump-memory win win.dd
+			libvmi/examples# mv ./win.dd ../../volatility/
+			查看建议的profile信息：
+			vol.py -f win.dd imageinfo
 		python vol.py --profile=Win7SP1x64_23418 -l vmi://win pslist
 	
+++++++++++++++++++++++++++++++++++++获取windows虚拟机内存使用需要安装virtio-win驱动++++++++++++++++++++++++++++++++++++++++++++++++++++++
+1、下载包含驱动的ISO
+	https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.141-1/virtio-win-0.1.141.iso
 
-=================================libvirt qemu相关 开始========================
+2、挂载到windows光驱
+	#1、挂载（如不能直接挂载见步骤##3）：
+		virsh attach-disk win /root/virtio-win-0.1.141.iso hdc --type cdrom --mode readonly --live
+	#2、弹出（本质是更新为一个空的）
+		virsh attach-disk win1 "" hdc --type cdrom --mode readonly --live
+	##3、不能直接挂载，则需要添加一个设备：
+		参考链接：https://docs-old.fedoraproject.org/en-US/Fedora/18/html/Virtualization_Administration_Guide/sect-Attaching_and_updating_a_device_with_virsh.html
+		vim /etc/libvirt/qemu/win-device.xml
+		==================paste=========================
+			<disk type='block' device='cdrom'>
+			  <driver name='qemu' type='raw'/>
+			  <target dev='hdc' bus='ide'/>
+			  <readonly/>
+			  <alias name='ide0-1-0'/>
+			  <address type='drive' controller='0' bus='1' unit='0'/>
+			</disk>
+		===========================================
+		virsh attach-device win /etc/libvirt/qemu/win-device.xml
+3、挂载到虚拟机内部之后，进入虚拟机安装相应的驱动，见文档"windows balloon驱动安装.doc"
+	参考链接：https://blog.csdn.net/signmem/article/details/78282624
+4、测试是否成功
+	virsh dommemstat win
+	#示例结果：
+		actual 2097152
+		swap_in 710892
+		swap_out 52224
+		major_fault 22801
+		minor_fault 786807
+		unused 1571184
+		available 2096752
+		rss 2125968
+	
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+=================================libvirt qemu-kvm相关 开始========================
 #启动libvirt自带的网桥virbr0
 	virsh net-start default
 
@@ -206,7 +244,8 @@ git clone https://github.com/volatilityfoundation/volatility.git
 		virsh shutdown master
 	#dump内存
 		virsh dump master master.dd --memory-only --live
-	
+	#查看客户机win的log
+		cat /var/log/libvirt/qemu/win.log
 #安装虚拟机
 	#第一种：使用之前的xml文件,见本目录下：
 		qemu-img create -f qcow2 /var/lib/libvirt/images/master.img 8G
@@ -280,44 +319,6 @@ git clone https://github.com/volatilityfoundation/volatility.git
 		qemu-nbd -d /dev/nbd0p1
 		
 ==============================qemu-ndb===================================================
-
-++++++++++++++++++++++++++++++++++++获取windows虚拟机内存使用需要安装virtio-win驱动++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	1、下载包含驱动的ISO
-		https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.141-1/virtio-win-0.1.141.iso
-
-	2、挂载到windows光驱
-		#1、如不能直接挂载（步骤2），则需要添加一个设备在进行步骤2
-			参考链接：https://docs-old.fedoraproject.org/en-US/Fedora/18/html/Virtualization_Administration_Guide/sect-Attaching_and_updating_a_device_with_virsh.html
-			vim /etc/libvirt/qemu/win-device.xml
-			==================paste=========================
-				<disk type='block' device='cdrom'>
-				  <driver name='qemu' type='raw'/>
-				  <target dev='hdc' bus='ide'/>
-				  <readonly/>
-				  <alias name='ide0-1-0'/>
-				  <address type='drive' controller='0' bus='1' unit='0'/>
-				</disk>
-			===========================================
-			virsh attach-device win /etc/libvirt/qemu/win-device.xml
-		#2、挂载：
-			virsh attach-disk win /home/sq/virtio-win-0.1.141.iso hdc --type cdrom --mode readonly --live
-		#3、弹出（本质是更新为一个空的）
-			virsh attach-disk win1 "" hdc --type cdrom --mode readonly --live
-	3、挂载到虚拟机内部之后，进入虚拟机安装相应的驱动，见文档"windows balloon驱动安装.doc"
-		参考链接：
-	4、测试是否成功
-		virsh dommemstat win
-		#示例结果：
-			actual 2097152
-			swap_in 710892
-			swap_out 52224
-			major_fault 22801
-			minor_fault 786807
-			unused 1571184
-			available 2096752
-			rss 2125968
-	
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ----------------遇到的错误及解决方式--------------------
 
