@@ -286,28 +286,6 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	rm /usr/local/bin/qemu*
 =================================libvirt qemu相关 结束========================
 
-==============================qemu-ndb===================================================
-#1、加载ndb驱动
-	modprobe nbd max_part=16
-#2、查看信息
-	modinfo nbd
-#3、连接qemu-ndb
-	qemu-nbd -c /dev/nbd0 /var/lib/libvirt/images/master1.img
-	##查看
-		fdisk -l /dev/nbd0
-		lvdisplay
-	##激活vg0
-		vgchange -ay vg0
-	##挂载
-		挂载vg0的逻辑分区lg1
-			mount /dev/vg0/lg1 /mnt/master/lg1
-		挂载/dev/nbd0p1
-			mount /dev/nbd0p1 /mnt/master
-	##umount 关闭连接
-		umount /dev/nbd0p1
-		qemu-nbd -d /dev/nbd0p1
-		
-==============================qemu-ndb===================================================
 
 ----------------遇到的错误及解决方式--------------------
 
