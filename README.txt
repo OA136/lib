@@ -57,6 +57,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	1、在宿主机里面新建libvmi的配置文件，/etc/libvmi.conf
 	
 	2、将libvmi/tools/linux-offset-finder文件夹复制到虚拟机master：（如果在宿主机下远程执行命令不成功，则进入master，root 用户下编译，编译时可能需要安装4.9及其以上的gcc：）
+		cd libvmi
 		scp -r ./tools/linux-offset-finder root@192.168.122.56:/root
 		ssh root@192.168.122.56 "apt-get update && apt-get install gcc make && cd linux-offset-finder && make && insmod findoffsets.ko && rmmod findoffsets.ko && dmesg"
 		可以看到相关的信息,
@@ -191,14 +192,13 @@ git clone https://github.com/volatilityfoundation/volatility.git
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 =================================libvirt qemu-kvm相关 开始========================
-#启动libvirt自带的网桥virbr0
+#查看自带网桥是否启动，若否则启动libvirt自带的网桥virbr0
+	ifconfig virbr0
 	virsh net-start default
 
 #添加网桥（libvirt自带的virbr0启动失败时，自己创建网桥br0，临时生效）
 	brctl addbr br0
-	brctl addif br0 eth1
-	ifconfig eth1 0.0.0.0
-	ifconfig br0 eth1的ip
+	ifconfig br0 自定义ip netmask 255.255.255.0
 	#或者（永久）/etc/network/interfaces
 		auto eth1
 		iface eth1 inet manual
