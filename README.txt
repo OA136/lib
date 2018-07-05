@@ -1,4 +1,4 @@
-===========宿主机：Ubuntu-16.04.4-server-amd64 内核版本：4.4.0-116-generic==========
+===========宿主机：Ubuntu-16.04.4-server-amd64 内核版本：4.4.0-62-generic==========
 ===========虚拟机：Ubuntu-16.04.4-server-amd64 内核版本：4.4.0-116-generic==========
 ===========Win7：cn_windows_7_enterprise_with_sp1_x64_dvd_620654.iso ===============
 ##学长github
@@ -25,7 +25,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	make
 	make install
 #1、安装qemu-1.5.1  参考链接：https://blog.csdn.net/u010466329/article/details/72465752
-	apt-get install cmake libcurl4-openssl-dev autoconf libtool bison flex libpixman-1-dev zlib1g-dev libglib2.0-dev libsnappy-dev libgtk-3-dev libsdl2-dev libjpeg-turbo8-dev libspice-server-dev 
+	apt-get install cabextract mscompress cmake libcurl4-openssl-dev autoconf libtool bison flex libpixman-1-dev zlib1g-dev libglib2.0-dev libsnappy-dev libgtk-3-dev libsdl2-dev libjpeg-turbo8-dev libspice-server-dev 
 	wget https://download.qemu.org/qemu-1.5.1.tar.xz
 	tar xvJf qemu-1.5.1.tar.xz && cd qemu-1.5.1 && patch -p1 < ../libvmi/tools/qemu-kvm-patch/kvm-physmem-access_1.5.1.patch
 	./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc --enable-debug --enable-vnc --enable-vnc-jpeg --enable-vnc-png --enable-kvm --enable-spice --enable-curl
@@ -41,7 +41,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 	cd json-c && sh autogen.sh && ./configure && make && make install && make check && cd ..
 	
 ##编译libvmi
-	cd libvmi && ./autogen.sh && ./configure --enable-shm-snapshot -build=x86_64-linux-gnu --disable-xen
+	cd libvmi && ./autogen.sh && ./configure -build=x86_64-linux-gnu --disable-xen
 	make && make install && ldconfig && cd ..
 ##安装libvmi-python：https://github.com/libvmi/python
 	apt install zip python-pip
@@ -86,7 +86,7 @@ git clone https://github.com/volatilityfoundation/volatility.git
 		#方法1、使用pdb
 			#宿主机安装依赖：
 				apt-get install python-pefile mscompress cabextract
-				pip install construct==2.5.5-reupload pdbparse
+				pip install construct==2.5.5-reupload pdbparse future
 			#安装好windows虚拟机后（domain：win保存的文件名：win.dd）：
 				libvmi/examples# ./dump-memory win win.dd
 				cp win1.dd ../tools/windows-offset-finder/
@@ -152,6 +152,8 @@ git clone https://github.com/volatilityfoundation/volatility.git
 			查看建议的profile信息：
 			vol.py -f win.dd imageinfo
 		python vol.py --profile=Win7SP1x64 -l vmi://win pslist
+		
+		 python vol.py --profile=Win2008R2SP0x64 -l vmi://win08 pslist
 	
 ++++++++++++++++++++++++++++++++++++获取windows虚拟机内存使用需要安装virtio-win驱动++++++++++++++++++++++++++++++++++++++++++++++++++++++
 1、下载包含驱动的ISO
